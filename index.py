@@ -1,10 +1,6 @@
 import sys
 from commands import test
 from commands import init
-from commands import add
-from commands import rm
-from commands import commit
-from commands import status
 
 def main():
     if len(sys.argv) < 2:
@@ -12,8 +8,9 @@ def main():
         print("Commands :")
         print("  init : Initialize a new githetic project")
         print("  add : Add a file to the githetic project")
-        print("  rm : Remove a file from working directory and index")
         print("  commit : Commit the changes to the githetic project")
+        print("  push : Push the changes to the githetic project")
+        print("  pull : Pull the changes from the githetic project")
         print("  status : Show the status of the githetic project")
         return
     
@@ -22,14 +19,6 @@ def main():
         test.hello()
     elif command == "init":
         init.init()
-    elif command == "add":
-        add.add()
-    elif command == "rm":
-        rm.rm()
-    elif command == "commit":
-        commit.commit()
-    elif command == "status":
-        status.status()
     else:
         print(f"Command {command} not found")
 
