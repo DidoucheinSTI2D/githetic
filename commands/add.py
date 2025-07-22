@@ -3,6 +3,7 @@ import sys
 import hashlib
 import shutil
 import zlib
+from gitignore import GitIgnore
 
 def add():
     if len(sys.argv) < 3:
@@ -39,26 +40,36 @@ def add():
         else:
             expanded_files.append(pattern)
     
+    gitignore = GitIgnore(current_dir)
+
     for file_path in expanded_files:
         if not os.path.exists(file_path):
             print(f"Error: '{file_path}' does not exist")
             continue
-        
+
         if os.path.isdir(file_path):
             continue
-        
+
+        if gitignore.is_ignored(os.path.abspath(file_path)):
+            print(f"Ignored '{file_path}' (matched .gitignore)")
+            continue
+
         try:
             with open(file_path, 'rb') as f:
                 content = f.read()
             
-            content_hash = hashlib.sha1(content).hexdigest()
+            # Add blob header as Git does: "blob <size>\0<content>"
+            header = f"blob {len(content)}\0".encode()
+            store = header + content
+            content_hash = hashlib.sha1(store).hexdigest()
             object_path = os.path.join(objects_dir, content_hash[:2], content_hash[2:])
             
             os.makedirs(os.path.dirname(object_path), exist_ok=True)
-            
-            compressed_content = zlib.compress(content)
-            with open(object_path, 'wb') as f:
-                f.write(compressed_content)
+
+            if not os.path.exists(object_path):  
+                compressed_content = zlib.compress(store)
+                with open(object_path, 'wb') as f:
+                    f.write(compressed_content)
             
             with open(index_file, 'a') as f:
                 f.write(f"{content_hash} {file_path}\n")
@@ -67,6 +78,5 @@ def add():
             
         except Exception as e:
             print(f"Error adding '{file_path}': {e}")
-
 if __name__ == "__main__":
     add() 
