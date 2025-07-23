@@ -21,6 +21,7 @@ def main():
         print("  rm : Remove a file from working directory and index")
         print("  commit : Commit the changes to the githetic project")
         print("  status : Show the status of the githetic project")
+        print("  merge : Merge changes from another branch ")
         return
     
     command = sys.argv[1]
