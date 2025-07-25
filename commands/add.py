@@ -3,7 +3,7 @@ import sys
 import hashlib
 import shutil
 import zlib
-from gitignore import GitIgnore
+from .gitignore import GitIgnore
 
 def add():
     if len(sys.argv) < 3:
