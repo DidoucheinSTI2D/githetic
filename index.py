@@ -22,6 +22,7 @@ def main():
         print("  commit : Commit the changes to the githetic project")
         print("  status : Show the status of the githetic project")
         print("  merge : Merge changes from another branch ")
+        print("  index : Show the current index")
         return
     
     command = sys.argv[1]

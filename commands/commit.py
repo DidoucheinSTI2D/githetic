@@ -26,18 +26,26 @@ def write_tree():
     if not entries:
         return None
 
-    tree_content = ""
+    tree_content = b""
     for file_path, hash_value in sorted(entries):
-        tree_content += f"100644 {file_path}\x00{bytes.fromhex(hash_value)}"
+        # Format : mode SP filename NUL SHA1 (20 bytes binary)
+        mode = b"100644"
+        path_bytes = file_path.encode()
+        sha_bytes = bytes.fromhex(hash_value)
+        tree_content += mode + b" " + path_bytes + b"\x00" + sha_bytes
     
-    tree_hash = hashlib.sha1(tree_content.encode('latin1')).hexdigest()
+    header = f"tree {len(tree_content)}\0".encode()
+    store = header + tree_content
+
+    tree_hash = hashlib.sha1(store).hexdigest()
 
     tree_path = os.path.join(objects_dir, tree_hash[:2], tree_hash[2:])
     os.makedirs(os.path.dirname(tree_path), exist_ok=True)
     
-    compressed_content = zlib.compress(tree_content.encode('latin1'))
-    with open(tree_path, 'wb') as f:
-        f.write(compressed_content)
+    if not os.path.exists(tree_path):
+        compressed_content = zlib.compress(store)
+        with open(tree_path, 'wb') as f:
+            f.write(compressed_content)
     
     return tree_hash
 
@@ -70,23 +78,30 @@ def commit():
                     with open(ref_path, 'r') as ref_f:
                         parent_hash = ref_f.read().strip()
     
+    timestamp = int(time.time())
+    author_committer = f"Githetic <githetic@example.com> {timestamp} +0000"
+
     commit_content = f"tree {tree_hash}\n"
     if parent_hash:
         commit_content += f"parent {parent_hash}\n"
-    
-    commit_content += f"author Githetic <githetic@example.com> {int(time.time())} +0000\n"
-    commit_content += f"committer Githetic <githetic@example.com> {int(time.time())} +0000\n\n"
+    commit_content += f"author {author_committer}\n"
+    commit_content += f"committer {author_committer}\n\n"
     commit_content += f"{message}\n"
-    
-    commit_hash = hashlib.sha1(commit_content.encode()).hexdigest()
+
+    commit_bytes = commit_content.encode()
+    header = f"commit {len(commit_bytes)}\0".encode()
+    store = header + commit_bytes
+
+    commit_hash = hashlib.sha1(store).hexdigest()
     
     objects_dir = os.path.join(git_dir, 'objects')
     commit_path = os.path.join(objects_dir, commit_hash[:2], commit_hash[2:])
     os.makedirs(os.path.dirname(commit_path), exist_ok=True)
     
-    compressed_content = zlib.compress(commit_content.encode())
-    with open(commit_path, 'wb') as f:
-        f.write(compressed_content)
+    if not os.path.exists(commit_path):
+        compressed_content = zlib.compress(store)
+        with open(commit_path, 'wb') as f:
+            f.write(compressed_content)
     
     refs_heads_main = os.path.join(git_dir, 'refs', 'heads', 'main')
     os.makedirs(os.path.dirname(refs_heads_main), exist_ok=True)
@@ -94,6 +109,7 @@ def commit():
     with open(refs_heads_main, 'w') as f:
         f.write(commit_hash)
     
+    # Reset index file (clear staged files)
     index_file_path = os.path.join(git_dir, 'index')
     with open(index_file_path, 'w') as f:
         pass
@@ -101,4 +117,4 @@ def commit():
     print(f"Created commit {commit_hash[:7]}")
 
 if __name__ == "__main__":
-    commit() 
+    commit()

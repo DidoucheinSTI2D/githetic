@@ -1,9 +1,9 @@
 import os
 import sys
 import hashlib
-import shutil
 import zlib
 from .gitignore import GitIgnore
+from indexfile import add_file_to_index
 
 def add():
     if len(sys.argv) < 3:
@@ -18,7 +18,6 @@ def add():
         return
     
     objects_dir = os.path.join(git_dir, 'objects')
-    index_file = os.path.join(git_dir, 'index')
     
     files_to_add = sys.argv[2:]
     expanded_files = []
@@ -71,12 +70,13 @@ def add():
                 with open(object_path, 'wb') as f:
                     f.write(compressed_content)
             
-            with open(index_file, 'a') as f:
-                f.write(f"{content_hash} {file_path}\n")
+            # Ajoute le fichier et son hash dans l'index texte
+            add_file_to_index(file_path, content_hash)
             
             print(f"Added '{file_path}' to staging area")
             
         except Exception as e:
             print(f"Error adding '{file_path}': {e}")
+
 if __name__ == "__main__":
-    add() 
+    add()
